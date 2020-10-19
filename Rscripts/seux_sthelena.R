@@ -30,16 +30,20 @@ detections[10:20, 2] <- c(1890, 1890, 1890, 1890, 1890, 1950, 1950, 1950, 1950, 
 # try making some spp be discovered later
 detections[40:48, 1] <- c(1870, 1880, 1890, 1900, 1910, 1920, 1930, 1940, 1950)
 
-# try adding in discoveries at year 1500
-detections[10:20, 1] <- 1500
+# try forcing model to reach back to 1500
+# by adding in an extinction event bw 1500 and 1501
+# warning! cannot have gaps in the data (eg between 1500 and the next discovery)
+detections[1,] <- c(1450, 1500)
+detections[2,] <- c(1500, 2020)
 
 # modelling -------------------
 
+# d = discoveries
 modelinputs <- 
   seux::get_model_inputs(
     detections$frstDetn, 
     detections$lastDetn,
-    collapse_timesteps = FALSE)
+    collapse_timesteps = TRUE)
 
 CIs_estimates <- 
   seux::get_CI_estimate(modelinputs$S, modelinputs$E)
