@@ -6,17 +6,40 @@ library(here)
 library(seux)
 library(tidyverse)
 
+# QUESTIONS -------------------
+# why does adding in earlier discovery dates (eg 1500) not 
+# change anything in 'modelinputs'?
+
+
+# data import ------------------
 helena <- 
   read.csv(here('Data/sthelena_dark_extinction.csv'))
 
 detections <- 
   data.frame(frstDetn = helena$frstDetn,
-             lastDetn = helena$lastDetn) %>% 
-  drop_na()
+             lastDetn = helena$lastDetn) 
+  #drop_na()
+
+
+
+# experiments -----------------
+
+# try making some spp go extinct earlier
+detections[10:20, 2] <- c(1890, 1890, 1890, 1890, 1890, 1950, 1950, 1950, 1950, 1999, 1999)
+
+# try making some spp be discovered later
+detections[40:48, 1] <- c(1870, 1880, 1890, 1900, 1910, 1920, 1930, 1940, 1950)
+
+# try adding in discoveries at year 1500
+detections[10:20, 1] <- 1500
+
+# modelling -------------------
 
 modelinputs <- 
-  seux::get_model_inputs( 
-    detections$frstDetn, detections$lastDetn)
+  seux::get_model_inputs(
+    detections$frstDetn, 
+    detections$lastDetn,
+    collapse_timesteps = FALSE)
 
 CIs_estimates <- 
   seux::get_CI_estimate(modelinputs$S, modelinputs$E)
@@ -29,12 +52,12 @@ df <- cbind(modelinputs, CIs_estimates, old_estimates)
 plot_output <- function(df) {
   
   p <- ggplot(df) + 
-    geom_line(aes(year, S,      color="S", linetype="data")) + 
-    geom_line(aes(year, E,      color="E", linetype="data")) + 
-    geom_line(aes(year, U_mean, color="U", linetype="hyper")) + 
-    geom_line(aes(year, U_old,  color="U", linetype="old")) + 
-    geom_line(aes(year, X_mean, color="X", linetype="hyper")) + 
-    geom_line(aes(year, X_old,  color="X", linetype="old")) +
+    geom_line(aes(year, S,      color="S", linetype="data"), size = 2) + 
+    geom_line(aes(year, E,      color="E", linetype="data"), size = 2) + 
+    geom_line(aes(year, U_mean, color="U", linetype="hyper"), size = 2) + 
+    geom_line(aes(year, U_old,  color="U", linetype="old"), size = 2) + 
+    geom_line(aes(year, X_mean, color="X", linetype="hyper"), size = 2 ) + 
+    geom_line(aes(year, X_old,  color="X", linetype="old"), size = 2 ) +
     scale_color_manual(name="Species class", 
                        values=c(
                          "S"     = "darkgreen", 
@@ -65,7 +88,8 @@ plot_output <- function(df) {
     geom_ribbon(aes(x=year, ymin=U_lo, ymax=U_hi), fill="orange", alpha=0.3) +
     xlab('years') +
     ylab('number of species') +
-    theme_bw()
+    theme_bw() +
+    xlim(1500, 2020)
   
   return(p)
   
