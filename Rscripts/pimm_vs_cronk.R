@@ -49,6 +49,9 @@ er <-
 # intercept is -15.1428
 b_0 <- yhat - er*xhat
 
+
+
+
 # pimm method -------------------
 
 sum(diff(extinct)) / sum(nadia_data$extant[1:6])
