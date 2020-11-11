@@ -19,7 +19,7 @@ detections <-
   mutate(
     lastDetn = case_when(
       lastDetn > 1995 ~ 1995,
-      TRUE ~ as.numeric(lastDetn))) # this line leaves the column along if it doesn't meet the above condition
+      TRUE ~ as.numeric(lastDetn))) # this line leaves the column alone if it doesn't meet the above condition
 
 
 # modelling -------------------
