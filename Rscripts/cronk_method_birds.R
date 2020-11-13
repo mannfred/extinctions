@@ -28,13 +28,13 @@ model1 <-
 # extinctions = 0.462(2012) - 693
 # total extinctions = 236
 # observed extinctions = 134
-# dark extinctions = 236 - 134
+# dark extinctions = 236 - 134 = 102
 0.462*2012 - 693
 
 # now modify data to give 0 extinct at year 1500
 birds3 <-
   birds2 %>% 
-  mutate(extinct = extinct + 99.454)
+  mutate(extinct = extinct + 102)
 
 # plotting
 plot_data <-
@@ -54,8 +54,38 @@ ggplot(plot_data) +
   stat_smooth(method = 'lm', fullrange = TRUE)
 
 # from SEUX we know there were 55 dark extinctions
+# we need to add them while keeping extinctions at 1500 = 0
+# so let's add them by increasing extinction rate
 
+# cronk model
+# extinctions = 0.462(2012) - 693 
 
+# add 55 DEs while keeping ext = 0 at year 1500
+# 0 = mu(1500) - 693 - 55
+# mu = 0.4986667
+
+# where x = year
+f <- function(x) 0.4986667*x - 748
+
+# calculate extinctions for dates of interest
+tot_ext <- sapply(birds3$date, f)
+
+# add new extinction data to dataset
+birds4 <-
+  birds3 %>% 
+  mutate(extinct = tot_ext)
+
+plot_data <-
+  rbind(birds2, birds3, birds4) %>% 
+  mutate(model = c(rep('no DEs', 6), rep('Cronk Method DEs', 6), rep('Cronk Method + SEUX DEs', 6)))
+
+ggplot(plot_data) +
+  aes(x = date, y = extinct, colour = model) +
+  geom_point(size = 3) + 
+  expand_limits(x = 1500) +
+  theme_bw() + 
+  # geom_smooth(method = 'lm') +
+  stat_smooth(method = 'lm', fullrange = TRUE)
 
 # ------------------------------------------------------
 # let's calculate the slope ("extinction rate") manually
