@@ -21,32 +21,52 @@ b1  <- as.numeric(model1$coefficients[1])
 
 
 # ---------------------------
-# add DEs from SEUX analysis
-# and spread out evenly from 1800-2012
+# add DEs from SEUX analysis by year
+# data below obtained from SEUX output
+# 1790 = 13.175 
+# 1852 = 44.8126 - 13.175 = 31.6376
+# 1900 = 55.5284 - 44.8126 = 10.7158
+# 1950 = 56.3457 - 55.5284 = 0.8173
+# 2000 = 56.359 - 56.3457 = 0.0133
+# 2019 = 56.3615 - 56.359 = 0.0025
 
-# add DE rate to mu1
-mu2 <- mu1 + (55/(2012-1800))
+years <- c(1790, 1852, 1900, 1950, 2000, 2019)
+DEs <- c(13.175, 31.6376, 10.7158, 0.8173, 0.0133, 0.0025)
+DEs_cumlative <- c(13.175, 44.8126, 55.5284, 56.3457, 56.359, 56.3615)
 
-# solve for intercept b2: 
-# we know that by 2012 there should
-# be 55 more extinctions than the OG dataset
-# b2 = -1262.557
-(max(birds2$extinct) + 55) - (mu2*2012)
+# estimate regular extinctions from linear model at
+# years stated above
+f_ext <- function(x) mu1*(x) + b1
 
-f_seuxDE <- function(x) (mu2*x) - 1262.557
+reg_ext <- sapply(years, f_ext)
 
-# create dataset from new model
-birds_seuxDEs <-
-  birds2 %>% 
-  mutate(extinct = f_seuxDE(birds2$date))
+# add DEs to regular extinctions at stated years
+tot_ext <- reg_ext + DEs_cumlative
 
+
+# ----------------------------------
+# fit linear model to dataset that includes DEs
+
+birds_DEs <- 
+  cbind(years, tot_ext) %>% 
+  as_tibble() %>% 
+  mutate(date = years) %>% 
+  mutate(extinct = tot_ext) %>% 
+  select(c(3,4))
+
+model2 <- 
+  lm(birds_DEs$extinct ~ birds_DEs$date)
+
+
+mu2 <- as.numeric(model2$coefficients[2])
+b2  <- as.numeric(model2$coefficients[1]) 
 
 # ---------------------------
 # extrapolate so that there are 
 # zero extinctions in year 1500
 
-# b3 = -(0.721*1500) = -1081.5
-f_pretax <- function(x) (mu2*x) - 1081.5
+# b3 = -(mu2*1500) = -936.4972
+f_pretax <- function(x) (mu2*x) - 936.4972
 
 # zero extinctions at year 1500
 f_pretax(1500)
@@ -65,8 +85,8 @@ birds_pretax <-
 # plotting
 
 plot_data <-
-  rbind(birds2, birds_seuxDEs, birds_pretax) %>% 
-  mutate(model = c(rep('no DEs', 6), rep('SEUX DEs', 6), rep('SEUX DEs + Cronk Method', 6)))
+  rbind(birds2, birds_DEs, birds_pretax) %>% 
+  mutate(model = c(rep('observed extinctions', 6), rep('observed + dark extinctions', 6), rep('pre-taxonomic extinctions', 6)))
 
 ggplot(plot_data) +
   aes(x = date, y = extinct, colour = model) +
@@ -74,7 +94,8 @@ ggplot(plot_data) +
   expand_limits(x = 1500) +
   theme_bw() + 
   # geom_smooth(method = 'lm') +
-  stat_smooth(method = 'lm', fullrange = TRUE)
+  stat_smooth(method = 'lm', fullrange = TRUE) +
+  ylab('cumulative extinctions')
 # -----------------------------------------
 # from SEUX we know there were 55 dark extinctions
 # we need to add them while keeping extinctions at 1500 = 0

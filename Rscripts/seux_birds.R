@@ -5,7 +5,7 @@ library(tidyverse)
 
 # data import ------------------
 birds <- 
-  read.csv(here('Data/bird_extinctions.csv'))
+  read.csv(here('Data/bird_extinctions_cronk.csv'))
 
 detections <- 
   data.frame(frstDetn = birds$"DESCRIPTION.DATE" ,
