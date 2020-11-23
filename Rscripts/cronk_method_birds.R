@@ -1,12 +1,30 @@
 library(here)
 library(tidyverse)
 
+# extinctions per date
 
-# data import
+birds1 <-
+  read.csv(here('Data/bird_extinctions_figure2.csv')) %>% 
+  select(c(2, 4))
+
+# dates of interest
+years <- c(1790, 1852, 1900, 1950, 2000, 2019)
+
+# count extinctions for dates of interest
+reg_ext <- vector("numeric", 6L)
+
+for (i in 1:length(years)) {
+  reg_ext[i] <- 
+    birds1 %>% 
+    filter(Extinction.date < years[i]+1) %>% 
+    tally() %>% 
+    as.numeric()
+}
+
+
+# merge into data.frame
 birds2 <- 
-  read.csv(here('Data/figure2_data.csv')) %>% 
-  slice(7:12) # capture data from 1800 - present
-
+  data.frame("date" = years, "extinct" = reg_ext)
 
 # ----------------------------
 # linear model with no DEs
@@ -30,15 +48,8 @@ b1  <- as.numeric(model1$coefficients[1])
 # 2000 = 56.359 - 56.3457 = 0.0133
 # 2019 = 56.3615 - 56.359 = 0.0025
 
-years <- c(1790, 1852, 1900, 1950, 2000, 2019)
 DEs <- c(13.175, 31.6376, 10.7158, 0.8173, 0.0133, 0.0025)
 DEs_cumlative <- c(13.175, 44.8126, 55.5284, 56.3457, 56.359, 56.3615)
-
-# estimate regular extinctions from linear model at
-# years stated above
-f_ext <- function(x) mu1*(x) + b1
-
-reg_ext <- sapply(years, f_ext)
 
 # add DEs to regular extinctions at stated years
 tot_ext <- reg_ext + DEs_cumlative
@@ -50,9 +61,9 @@ tot_ext <- reg_ext + DEs_cumlative
 birds_DEs <- 
   cbind(years, tot_ext) %>% 
   as_tibble() %>% 
-  mutate(date = years) %>% 
-  mutate(extinct = tot_ext) %>% 
-  select(c(3,4))
+  rename(date = years) %>% 
+  rename(extinct = tot_ext) 
+
 
 model2 <- 
   lm(birds_DEs$extinct ~ birds_DEs$date)
@@ -66,7 +77,7 @@ b2  <- as.numeric(model2$coefficients[1])
 # zero extinctions in year 1500
 
 # b3 = -(mu2*1500) = -936.4972
-f_pretax <- function(x) (mu2*x) - 936.4972
+f_pretax <- function(x) (mu2*x) - 910.373
 
 # zero extinctions at year 1500
 f_pretax(1500)
@@ -78,8 +89,11 @@ f_pretax(1500)
 # for pretaxonomic DEs
 # calculate extinctions for dates of interest
 birds_pretax <-
-  birds2 %>% 
-  mutate(extinct = f_pretax(birds2$date))
+  birds_DEs %>% 
+  mutate(extinct = f_pretax(birds_DEs$date))
+
+
+
 
 # -------------------------
 # plotting
@@ -96,6 +110,8 @@ ggplot(plot_data) +
   # geom_smooth(method = 'lm') +
   stat_smooth(method = 'lm', fullrange = TRUE) +
   ylab('cumulative extinctions')
+
+
 # -----------------------------------------
 # from SEUX we know there were 55 dark extinctions
 # we need to add them while keeping extinctions at 1500 = 0
