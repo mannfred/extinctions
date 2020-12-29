@@ -12,12 +12,18 @@ get_Tedesco_est = function(my_df, last_ext_year = NA){
   ## Step 1: Getting extinction rate, mu
   max_T = max(my_df$ext_year)
   
+  # creates an empty numeric object with length 169
   x_t = numeric(max_T)
+  
+  # find total extants for every year
   for ( i in 0:(max_T-1) ){
     x_t[i+1] = sum(my_df$det_year == i)
   }
+  
+  # number of years that extinctions were below their max #
   NE = sum(my_df$ext_year != max_T)
   
+
   if(is.na(last_ext_year)){last_ext_year = max_T}
   
   eq13 = function(mu){
@@ -26,7 +32,7 @@ get_Tedesco_est = function(my_df, last_ext_year = NA){
     i = seq(last_ext_year, 1, -1)
     p = 1-(1-mu)^i
     
-    # Species are expected to be observed extinct if they do not persist till the tt-th year
+    # Species are expected to be observed extinct if they do not persist until the tt-th year
     EE = 0
     for(j in 1:last_ext_year){
       EE = EE + x_t[j]*p[j]

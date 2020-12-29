@@ -4,11 +4,10 @@ library(tidyverse)
 # extinctions per date
 
 birds1 <-
-  read.csv(here('Data/bird_extinctions_figure2.csv')) %>% 
-  select(c(2, 4))
+  read.csv(here('Data/bird_pretax_extinct.csv'))
 
 # dates of interest
-years <- c(1790, 1852, 1900, 1950, 2000, 2019)
+years <- c(1790, 1852, 1900, 1950, 2000, 2018)
 
 # count extinctions for dates of interest
 reg_ext <- vector("numeric", 6L)
@@ -30,7 +29,7 @@ birds2 <-
 # linear model with no DEs
 
 # extinctions = mu*year + b
-# extinctions = 0.462*year - 792
+# extinctions = 0.692*year - 1196.599
 model1 <- 
   lm(birds2$extinct ~ birds2$date)
 
@@ -76,8 +75,10 @@ b2  <- as.numeric(model2$coefficients[1])
 # extrapolate so that there are 
 # zero extinctions in year 1500
 
-# b3 = -(mu2*1500) = -936.4972
-f_pretax <- function(x) (mu2*x) - 910.373
+# b3 = (mu2*1500) = 1282.328
+
+b3 <- (mu2*1500)
+f_pretax <- function(x) (mu2*x) - b3
 
 # zero extinctions at year 1500
 f_pretax(1500)
@@ -93,6 +94,11 @@ birds_pretax <-
   mutate(extinct = f_pretax(birds_DEs$date))
 
 
+# ------------------------
+# how many DEs have to be added to the regular extinctions and DEs from SEUX?
+# ~179.69 additional extinctions
+-b3 - (b2)
+
 
 
 # -------------------------
@@ -105,11 +111,21 @@ plot_data <-
 ggplot(plot_data) +
   aes(x = date, y = extinct, colour = model) +
   geom_point(size = 3) + 
-  expand_limits(x = 1500) +
-  theme_bw() + 
-  # geom_smooth(method = 'lm') +
+  expand_limits(x = 1500) + # starts x axis at year 1500
   stat_smooth(method = 'lm', fullrange = TRUE) +
-  ylab('cumulative extinctions')
+  ylab('cumulative extinctions') +
+  theme(
+    panel.grid.major = element_blank(), 
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(), 
+    axis.line = element_line(colour = "black"),
+    axis.text.x = element_text(size = 15),
+    axis.text.y = element_text(size = 15)) +
+  labs(x = NULL, y = NULL) +
+  coord_cartesian(ylim = c(0, 450)) + # extends CI band to entire regression line
+  scale_y_continuous(expand = c(0, 0)) # forces zero to touch x axis
+
+
 
 
 # -----------------------------------------
